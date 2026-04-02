@@ -17,3 +17,7 @@ jobs:
 
     - name: Fail Step
       run: exit 0
+      
+    - name: Send Alert
+      if: success()
+      run: echo "Build success!"
