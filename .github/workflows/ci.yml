@@ -25,33 +25,34 @@ jobs:
         path: .
         base: HEAD~1
         head: HEAD
-      continue-on-error: false   # 🚨 THIS MAKES IT BLOCK
 
-    # 3. Dependency Vulnerability Scan
+    # 3. Dependency Review (ONLY for PRs)
     - name: Dependency Review
+      if: github.event_name == 'pull_request'
       uses: actions/dependency-review-action@v3
 
-    # 4. CodeQL Init
+    # 4. Initialize CodeQL (SAST)
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
-        languages: java   # change if needed
+        languages: java   # 🔁 change if needed
 
-    # 5. Build
+    # 5. Build project
     - name: Autobuild
       uses: github/codeql-action/autobuild@v2
 
-    # 6. Analyze (FAIL on issues)
+    # 6. Run CodeQL Analysis
     - name: CodeQL Analysis
       uses: github/codeql-action/analyze@v2
 
-    # 7. Stop pipeline explicitly if anything failed
+    # 7. Enforce Security Gate (BLOCK pipeline if anything fails)
     - name: Enforce Security Gate
       if: failure()
       run: |
         echo "❌ Security issues detected. Blocking pipeline."
         exit 1
+
     # 8. Success message
-    - name: Success
+    - name: Success Message
       if: success()
-      run: echo "✅ No vulnerabilities found"
+      run: echo "✅ No vulnerabilities found. Pipeline passed."
