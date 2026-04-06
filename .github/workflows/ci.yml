@@ -20,7 +20,7 @@ jobs:
 
     # 2. Secret Scan (FAILS if secrets found)
     - name: Secret Scan (TruffleHog)
-      uses: trufflesecurity/trufflehog@v3
+      uses: trufflesecurity/trufflehog@main
       with:
         path: .
         base: HEAD~1
