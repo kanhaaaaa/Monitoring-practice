@@ -1,45 +1,57 @@
-name: Monitoring Demo
+name: DevSecOps Pipeline (Enforced Security)
 
 on:
   push:
     branches: [ main ]
+  pull_request:
 
 jobs:
-  build:
+  security-check:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      security-events: write
+
     steps:
+    # 1. Checkout code
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Run Step
-      run: echo "Pipeline running"
-
-    - name: Fail Step
-      run: exit 0
-      
-    - name: Send Email on Success
-      if: success()
-      uses: dawidd6/action-send-mail@v3
+    # 2. Secret Scan (FAILS if secrets found)
+    - name: Secret Scan (TruffleHog)
+      uses: trufflesecurity/trufflehog@v3
       with:
-        server_address: smtp.gmail.com
-        server_port: 465
-        username: ${{ secrets.EMAIL }}
-        password: ${{ secrets.PASSWORD }}
-        subject: Build Successful 
-        body: Your pipeline completed successfully!
-        to: your-email@gmail.com
-        from: ${{ secrets.EMAIL }}
+        path: .
+        base: HEAD~1
+        head: HEAD
+      continue-on-error: false   # 🚨 THIS MAKES IT BLOCK
 
-    - name: Send Email on Failure
+    # 3. Dependency Vulnerability Scan
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+
+    # 4. CodeQL Init
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: java   # change if needed
+
+    # 5. Build
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    # 6. Analyze (FAIL on issues)
+    - name: CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+    # 7. Stop pipeline explicitly if anything failed
+    - name: Enforce Security Gate
       if: failure()
-      uses: dawidd6/action-send-mail@v3
-      with:
-        server_address: smtp.gmail.com
-        server_port: 465
-        username: ${{ secrets.EMAIL }}
-        password: ${{ secrets.PASSWORD }}
-        subject: Build Failed 
-        body: Your pipeline failed. Please check GitHub Actions logs.
-        to: your-email@gmail.com
-        from: ${{ secrets.EMAIL }}
+      run: |
+        echo "❌ Security issues detected. Blocking pipeline."
+        exit 1
+    # 8. Success message
+    - name: Success
+      if: success()
+      run: echo "✅ No vulnerabilities found"
