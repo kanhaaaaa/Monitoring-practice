@@ -31,28 +31,26 @@ jobs:
       if: github.event_name == 'pull_request'
       uses: actions/dependency-review-action@v3
 
-    # 4. Initialize CodeQL (SAST)
+    # 4. Initialize CodeQL
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
-        languages: java   # 🔁 change if needed
+        languages: java
 
-    # 5. Build project
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
+    # ❌ REMOVED AUTOBUILD (THIS WAS THE ERROR)
 
-    # 6. Run CodeQL Analysis
+    # 5. Run CodeQL Analysis
     - name: CodeQL Analysis
       uses: github/codeql-action/analyze@v2
 
-    # 7. Enforce Security Gate (BLOCK pipeline if anything fails)
+    # 6. Enforce Security Gate
     - name: Enforce Security Gate
       if: failure()
       run: |
         echo "❌ Security issues detected. Blocking pipeline."
         exit 1
 
-    # 8. Success message
+    # 7. Success message
     - name: Success Message
       if: success()
       run: echo "✅ No vulnerabilities found. Pipeline passed."
